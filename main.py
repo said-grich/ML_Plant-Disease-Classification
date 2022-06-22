@@ -6,53 +6,57 @@ from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 
 import base64
-import torch                    # Pytorch module
-import torch.nn as nn           # for creating  neural networks
-import torch.nn.functional as F # for functions for calculating loss
+import torch  # Pytorch module
+import torch.nn as nn  # for creating  neural networks
+import torch.nn.functional as F  # for functions for calculating loss
 from PIL import Image
 from torchvision import transforms
 
 import numpy as np
 from PIL import Image
-imageUploaded=Image.open("assets/images/download.png").convert('RGB');
-classes=['Apple___Apple_scab',
- 'Apple___Black_rot',
- 'Apple___Cedar_apple_rust',
- 'Apple___healthy',
- 'Blueberry___healthy',
- 'Cherry_(including_sour)___Powdery_mildew',
- 'Cherry_(including_sour)___healthy',
- 'Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot',
- 'Corn_(maize)___Common_rust_',
- 'Corn_(maize)___Northern_Leaf_Blight',
- 'Corn_(maize)___healthy',
- 'Grape___Black_rot',
- 'Grape___Esca_(Black_Measles)',
- 'Grape___Leaf_blight_(Isariopsis_Leaf_Spot)',
- 'Grape___healthy',
- 'Orange___Haunglongbing_(Citrus_greening)',
- 'Peach___Bacterial_spot',
- 'Peach___healthy',
- 'Pepper,_bell___Bacterial_spot',
- 'Pepper,_bell___healthy',
- 'Potato___Early_blight',
- 'Potato___Late_blight',
- 'Potato___healthy',
- 'Raspberry___healthy',
- 'Soybean___healthy',
- 'Squash___Powdery_mildew',
- 'Strawberry___Leaf_scorch',
- 'Strawberry___healthy',
- 'Tomato___Bacterial_spot',
- 'Tomato___Early_blight',
- 'Tomato___Late_blight',
- 'Tomato___Leaf_Mold',
- 'Tomato___Septoria_leaf_spot',
- 'Tomato___Spider_mites Two-spotted_spider_mite',
- 'Tomato___Target_Spot',
- 'Tomato___Tomato_Yellow_Leaf_Curl_Virus',
- 'Tomato___Tomato_mosaic_virus',
- 'Tomato___healthy'];
+
+imageUploaded = Image.open("assets/default.jpg").convert('RGB');
+result = (False, "Please Select a Valid Photo")
+classes = ['Apple___Apple_scab',
+           'Apple___Black_rot',
+           'Apple___Cedar_apple_rust',
+           'Apple___healthy',
+           'Blueberry___healthy',
+           'Cherry_(including_sour)___Powdery_mildew',
+           'Cherry_(including_sour)___healthy',
+           'Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot',
+           'Corn_(maize)___Common_rust_',
+           'Corn_(maize)___Northern_Leaf_Blight',
+           'Corn_(maize)___healthy',
+           'Grape___Black_rot',
+           'Grape___Esca_(Black_Measles)',
+           'Grape___Leaf_blight_(Isariopsis_Leaf_Spot)',
+           'Grape___healthy',
+           'Orange___Haunglongbing_(Citrus_greening)',
+           'Peach___Bacterial_spot',
+           'Peach___healthy',
+           'Pepper,_bell___Bacterial_spot',
+           'Pepper,_bell___healthy',
+           'Potato___Early_blight',
+           'Potato___Late_blight',
+           'Potato___healthy',
+           'Raspberry___healthy',
+           'Soybean___healthy',
+           'Squash___Powdery_mildew',
+           'Strawberry___Leaf_scorch',
+           'Strawberry___healthy',
+           'Tomato___Bacterial_spot',
+           'Tomato___Early_blight',
+           'Tomato___Late_blight',
+           'Tomato___Leaf_Mold',
+           'Tomato___Septoria_leaf_spot',
+           'Tomato___Spider_mites Two-spotted_spider_mite',
+           'Tomato___Target_Spot',
+           'Tomato___Tomato_Yellow_Leaf_Curl_Virus',
+           'Tomato___Tomato_mosaic_virus',
+           'Tomato___healthy'];
+
+
 def get_default_device():
     """Pick GPU if available, else CPU"""
     if torch.cuda.is_available:
@@ -85,16 +89,22 @@ class DeviceDataLoader():
     def __len__(self):
         """Number of batches"""
         return len(self.dl)
+
+
 def accuracy(outputs, labels):
     _, preds = torch.max(outputs, dim=1)
     return torch.tensor(torch.sum(preds == labels).item() / len(preds))
+
+
 def ConvBlock(in_channels, out_channels, pool=False):
     layers = [nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
-             nn.BatchNorm2d(out_channels),
-             nn.ReLU(inplace=True)]
+              nn.BatchNorm2d(out_channels),
+              nn.ReLU(inplace=True)]
     if pool:
         layers.append(nn.MaxPool2d(4))
     return nn.Sequential(*layers)
+
+
 class ImageClassificationBase(nn.Module):
 
     def training_step(self, batch):
@@ -148,35 +158,41 @@ class ResNet9(ImageClassificationBase):
         out = self.classifier(out)
         return out
 
-def predict_image(img, model):
-        """Converts image to array and return the predicted class
-            with highest probability"""
-        # Convert to a batch of 1
-        xb = to_device(img.unsqueeze(0), torch.device('cpu'))
-        # Get predictions from model
-        yb = model(xb)
-        # Pick index with highest probability
-        _, preds = torch.max(yb, dim=1)
-        # Retrieve the class label
-        return classes[preds[0].item()]
 
-def pridiction(img,model):
-        convert_tensor = transforms.ToTensor()
-        img = convert_tensor(img)
-        return predict_image(img, model);
+def predict_image(img, model):
+    """Converts image to array and return the predicted class
+        with highest probability"""
+    # Convert to a batch of 1
+    xb = to_device(img.unsqueeze(0), torch.device('cpu'))
+    # Get predictions from model
+    yb = model(xb)
+    # Pick index with highest probability
+    _, preds = torch.max(yb, dim=1)
+    # Retrieve the class label
+    return classes[preds[0].item()]
+
+
+def pridiction(img, model):
+    convert_tensor = transforms.ToTensor()
+    img = convert_tensor(img)
+    return predict_image(img, model);
+
 
 def load_and_preprocess(image):
-   image1 = Image.open(image)
-   rgb =  Image.new('RGB', image1.size)
-   rgb.paste(image1)
-   image = rgb
-   test_image = image.resize((256,256))
-   return test_image
+    image1 = Image.open(image)
+    rgb = Image.new('RGB', image1.size)
+    rgb.paste(image1)
+    image = rgb
+    test_image = image.resize((256, 256))
+    return test_image
+
 
 def np_array_normalise(test_image):
-   np_image = np.array(test_image)
-   final_image = np.expand_dims(np_image, 0)
-   return final_image
+    np_image = np.array(test_image)
+    final_image = np.expand_dims(np_image, 0)
+    return final_image
+
+
 tabs_styles = {
     'height': '44px',
     'align-items': 'center'
@@ -401,12 +417,12 @@ def render_content(tab):
         return html.Div([
             html.Div(
                 className="box",
-                children=[ html.H1('Prediction of Plant Disease :',
-                style={'text-align': 'center', 'margin-top': '100px', 'color': '#1F4068'})]
+                children=[html.H1('Prediction of Plant Disease :',
+                                  style={'text-align': 'center', 'margin-top': '100px', 'color': '#1F4068'})]
             ),
             html.Div(
 
-                style={'padding':'0 120px'},children=[
+                style={'padding': '0 120px'}, children=[
                     dcc.Upload(
                         id='upload-photo',
                         children=html.Div([
@@ -426,44 +442,65 @@ def render_content(tab):
                         # Allow multiple files to be uploaded
                         multiple=False,
                     ),
-                   html.Div(className="imageContainer",children=[ html.Img(id="img",src =imageUploaded,className="col-12 col-md-8")]),
-                    html.Div(className="imageContainer",children=[dbc.Button("Predict the Image", color="light", className="me-1")]),
+                    html.Div(className="imageContainer",
+                             children=[html.Img(id="img", src=imageUploaded, className="col-12 col-md-8")]),
+                    html.Div(className="imageContainer", children=[
+                        dbc.Button("Predict the Image", color="light", id="open", n_clicks=0, className="me-1")]),
                     dbc.Modal(
+
                         [
-                            dbc.ModalHeader("HEADER"),
-                            dbc.ModalBody("BODY OF MODAL"),
-                            dbc.ModalFooter(
-                                dbc.Button("CLOSE BUTTON", id="close", className="ml-auto")
-                            ),
+                            dbc.ModalHeader("Result Of prediction"),
+                            dbc.ModalBody(html.Div(className="imageContainer", children=[html.H1(id="result")])),
                         ],
-                        id="modal",
+                        id="open-centered",
                         is_open=False,
+                        centered=True,
                     ),
 
-            ]),
-
-
+                ]),
 
         ])
 
+
 @app.callback(
-        Output(component_id='img', component_property='src'),
-        Input(component_id='upload-photo', component_property='contents')
-    )
+    Output(component_id='img', component_property='src'),
+    Input(component_id='upload-photo', component_property='contents')
+)
 def prediction(image):
     global model;
     global imageUploaded;
+    global result;
     encoded_image = image.split(",")[1]
     decoded_image = base64.b64decode(encoded_image)
     bytes_image = io.BytesIO(decoded_image)
     image = Image.open(bytes_image).convert('RGB')
-    imageUploaded=image
-    # result=pridiction(image, model)
+    imageUploaded = image
+    re = pridiction(image, model)
+    re=re.replace("___"," ")
+    re=re.replace("_"," ")
+    if (re):
+        result = (True, re)
+    else:
+        result = (False, "chPhoto")
     # image = Image.open(io.BytesIO(base64_decoded))
     # image_np = np.array(image)
     return imageUploaded;
 
 
-if __name__ == "__main__":
+@app.callback(
+    [Output(component_id='open-centered', component_property='is_open'),
+     Output(component_id='result', component_property='children')
+     ],
+    [Input("open", "n_clicks")],
+    [State("open-centered", "is_open")],
+)
+def openModal(n1, is_open):
+    global result;
 
+    if (result[0]) and (n1 ):
+        return(not is_open,result[1])
+    return (is_open,result[1])
+
+
+if __name__ == "__main__":
     app.run_server(debug=True)
