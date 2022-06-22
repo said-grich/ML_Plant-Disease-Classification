@@ -123,8 +123,7 @@ tb-nightly==2.10.0a20220622
 tenacity==8.0.1
 
 termcolor==1.1.0
-tf-estimator-nightly==2.10.0.dev2022062208
-tf-nightly-gpu==2.10.0.dev20220622
+
 tinycss2==1.1.1
 tomli==2.0.1
 torch==1.11.0
